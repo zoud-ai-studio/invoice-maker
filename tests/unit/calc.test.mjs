@@ -55,6 +55,28 @@ test("handles zero amounts and a full discount", () => {
   assert.equal(formatAed(totals.total), "AED 0.00");
 });
 
+test("ignores invalid percentages when calculating totals", () => {
+  const totals = calculateTotals(invoice({
+    lineItems: [{ id: "line-1", description: "Design", quantity: 1, unitPrice: 500 }],
+    discountPercent: 150,
+    vatPercent: 150,
+  }));
+
+  assert.equal(formatAed(totals.discount), "AED 0.00");
+  assert.equal(formatAed(totals.vat), "AED 0.00");
+  assert.equal(formatAed(totals.total), "AED 500.00");
+});
+
+test("safely ignores numeric exponential values that cannot be represented exactly", () => {
+  const totals = calculateTotals(invoice({
+    lineItems: [{ id: "line-1", description: "Unsafe", quantity: 1e21, unitPrice: 1 }],
+    vatPercent: 0,
+  }));
+
+  assert.equal(formatAed(totals.subtotal), "AED 0.00");
+  assert.equal(formatAed(totals.total), "AED 0.00");
+});
+
 test("parses raw decimal text without number coercion and rejects unsafe values", () => {
   assert.deepEqual(parseDecimalText("99999999999999999999999"), { error: "Enter a value up to 12 whole digits." });
   assert.deepEqual(parseDecimalText("1e21"), { error: "Enter a base-10 decimal number." });

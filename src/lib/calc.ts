@@ -15,6 +15,7 @@ export type DecimalParseResult = { decimal: Decimal } | { error: string };
 const MAX_WHOLE_DIGITS = 12;
 const MAX_DECIMAL_PLACES = 6;
 const ZERO: Decimal = { coefficient: 0n, scale: 0 };
+const ONE_HUNDRED: Decimal = { coefficient: 100n, scale: 0 };
 
 export function parseDecimalText(value: string, options: { maximum?: string } = {}): DecimalParseResult {
   if (/^-\d+(?:\.\d+)?$/.test(value)) return { error: options.maximum ? `Enter a value from 0 to ${options.maximum}.` : "Enter a non-negative value." };
@@ -44,8 +45,9 @@ function decimal(value: DecimalValue): Decimal {
     return "decimal" in parsed ? parsed.decimal : ZERO;
   }
   if (!Number.isFinite(value) || value < 0) return ZERO;
-  const [whole, fraction = ""] = value.toFixed(MAX_DECIMAL_PLACES).replace(/0+$/, "").replace(/\.$/, "").split(".");
-  return { coefficient: BigInt(`${whole}${fraction}`), scale: fraction.length };
+  const rounded = value.toFixed(MAX_DECIMAL_PLACES).replace(/0+$/, "").replace(/\.$/, "");
+  const parsed = parseDecimalText(rounded);
+  return "decimal" in parsed ? parsed.decimal : ZERO;
 }
 
 function roundedFils(coefficient: bigint, scale: number): bigint {
@@ -64,6 +66,7 @@ function roundHalfUp(coefficient: bigint, scale: number): bigint {
 
 function percentage(amount: bigint, percent: DecimalValue): bigint {
   const value = decimal(percent);
+  if (compareDecimals(value, ONE_HUNDRED) > 0) return 0n;
   return roundHalfUp(amount * value.coefficient, value.scale + 2);
 }
 

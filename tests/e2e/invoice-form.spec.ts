@@ -13,6 +13,22 @@ test("creates a line item and recalculates totals", async ({ page }) => {
   await expect(page.getByText("AED 1,417.50", { exact: true })).toBeVisible();
 });
 
+test("does not apply an invalid discount or VAT to totals", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Add line item" }).click();
+  await page.getByLabel("Quantity 1").fill("1");
+  await page.getByLabel("Unit price 1").fill("500");
+  await expect(page.getByText("AED 525.00", { exact: true })).toBeVisible();
+
+  await page.getByLabel("Discount percentage").fill("150");
+  await expect(page.getByLabel("Discount percentage")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText("AED 525.00", { exact: true })).toBeVisible();
+
+  await page.getByLabel("VAT percentage").fill("150");
+  await expect(page.getByLabel("VAT percentage")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText("AED 500.00", { exact: true })).toBeVisible();
+});
+
 test("keeps invalid numeric text on the field and never crashes", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Add line item" }).click();
