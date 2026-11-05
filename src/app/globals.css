@@ -1,0 +1,16 @@
+:root { color: #172033; background: #f6f8fc; font-family: Arial, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+.invoice-shell { max-width: 1120px; margin: 0 auto; padding: 32px 20px 56px; }
+header { margin-bottom: 24px; } h1 { margin: 4px 0 8px; font-size: 2rem; } h2 { margin: 0; }
+.eyebrow { color: #2563eb; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; }
+.form-card { background: white; border: 1px solid #dbe3f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 18px #1e293b0d; }
+.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+label { display: grid; gap: 6px; font-size: .9rem; font-weight: 600; } input { width: 100%; min-width: 0; border: 1px solid #aab7cc; border-radius: 6px; padding: 9px 10px; background: white; } input:focus, button:focus { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.line-items-heading { display: flex; gap: 16px; justify-content: space-between; align-items: center; margin: 32px 0 12px; }.line-items-heading button { background: #2563eb; color: white; border: 0; border-radius: 6px; padding: 10px 14px; font-weight: 700; }
+.empty-state { border: 1px dashed #aab7cc; border-radius: 8px; padding: 22px; color: #52627a; text-align: center; }.line-head, .line-row { display: grid; grid-template-columns: minmax(140px, 2fr) minmax(90px, .7fr) minmax(110px, .9fr) minmax(110px, .9fr) auto; gap: 12px; align-items: center; }.line-head { color: #52627a; font-size: .8rem; font-weight: 700; padding: 0 0 7px; }.line-row { border-top: 1px solid #e2e8f0; padding: 12px 0; }.line-row label { display: block; }.line-row output { text-align: right; font-variant-numeric: tabular-nums; }.remove { border: 0; background: none; color: #b91c1c; text-decoration: underline; padding: 8px; }
+.summary-area { display: grid; grid-template-columns: 1fr minmax(270px, .8fr); gap: 32px; border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 24px; }.tax-fields { display: grid; gap: 16px; max-width: 260px; }.totals { margin: 0; }.totals div { display: flex; justify-content: space-between; gap: 20px; padding: 7px 0; }.totals dd { margin: 0; font-variant-numeric: tabular-nums; }.grand-total { border-top: 2px solid #172033; font-weight: 800; font-size: 1.1rem; margin-top: 5px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 640px) { .invoice-shell { padding: 20px 12px 40px; }.form-card { padding: 16px; }.field-grid, .summary-area { grid-template-columns: 1fr; }.line-head { display: none; }.line-row { grid-template-columns: 1fr 1fr; }.line-row label:first-child { grid-column: 1 / -1; }.line-row output { text-align: left; }.remove { text-align: left; }.tax-fields { max-width: none; } }
