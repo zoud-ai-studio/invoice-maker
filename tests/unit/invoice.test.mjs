@@ -7,6 +7,12 @@ test("creates an editable draft with the next available invoice number", () => {
   assert.equal(draft.invoiceNumber, "INV-0004");
   assert.equal(draft.invoiceDate, "2026-11-05");
   assert.equal(draft.dueDate, "2026-11-19");
+  assert.equal(draft.businessAddressLine1, "");
+  assert.equal(draft.businessAddressLine2, "");
+  assert.equal(draft.businessPhone, "");
+  assert.equal(draft.clientAddressLine1, "");
+  assert.equal(draft.clientAddressLine2, "");
+  assert.equal(draft.clientPhone, "");
   assert.deepEqual(draft.lineItems, []);
 });
 

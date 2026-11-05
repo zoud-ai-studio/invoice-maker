@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { calculateTotals } from "@/lib/calc";
+import { calculateTotals, draftNumericErrors } from "@/lib/calc";
 import { formatAed } from "@/lib/format";
 import { addDays, createDraftInvoice, emptyDraftLineItem, type DraftInvoice } from "@/lib/invoice";
 
@@ -11,21 +11,11 @@ function localDate(): string {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
-function numberOrZero(value: string): number {
-  const number = Number(value);
-  return Number.isFinite(number) && number >= 0 ? number : 0;
-}
-
 export function InvoiceForm() {
   const [draft, setDraft] = useState<DraftInvoice>(() => createDraftInvoice(localDate()));
   const [dueDateEdited, setDueDateEdited] = useState(false);
-  const invoice = useMemo(() => ({
-    ...draft,
-    lineItems: draft.lineItems.map((item) => ({ ...item, quantity: numberOrZero(item.quantity), unitPrice: numberOrZero(item.unitPrice) })),
-    discountPercent: numberOrZero(draft.discountPercent),
-    vatPercent: numberOrZero(draft.vatPercent),
-  }), [draft]);
-  const totals = calculateTotals(invoice);
+  const numericErrors = useMemo(() => draftNumericErrors(draft), [draft]);
+  const totals = calculateTotals(draft);
 
   function update<K extends keyof DraftInvoice>(key: K, value: DraftInvoice[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -40,7 +30,13 @@ export function InvoiceForm() {
     <section className="form-card" aria-label="Invoice details">
       <div className="field-grid">
         <label>Business name<input value={draft.businessName} onChange={(event) => update("businessName", event.target.value)} /></label>
+        <label>Business address line 1<input value={draft.businessAddressLine1} onChange={(event) => update("businessAddressLine1", event.target.value)} /></label>
+        <label>Business address line 2<input value={draft.businessAddressLine2} onChange={(event) => update("businessAddressLine2", event.target.value)} /></label>
+        <label>Business phone<input type="tel" value={draft.businessPhone} onChange={(event) => update("businessPhone", event.target.value)} /></label>
         <label>Client name<input value={draft.clientName} onChange={(event) => update("clientName", event.target.value)} /></label>
+        <label>Client address line 1<input value={draft.clientAddressLine1} onChange={(event) => update("clientAddressLine1", event.target.value)} /></label>
+        <label>Client address line 2<input value={draft.clientAddressLine2} onChange={(event) => update("clientAddressLine2", event.target.value)} /></label>
+        <label>Client phone<input type="tel" value={draft.clientPhone} onChange={(event) => update("clientPhone", event.target.value)} /></label>
         <label>Invoice number<input aria-label="Invoice number" value={draft.invoiceNumber} onChange={(event) => update("invoiceNumber", event.target.value)} /></label>
         <label>Invoice date<input aria-label="Invoice date" type="date" value={draft.invoiceDate} onChange={(event) => {
           const date = event.target.value;
@@ -54,8 +50,8 @@ export function InvoiceForm() {
         <div className="line-head" role="row"><span>Description</span><span>Quantity</span><span>Unit price</span><span>Amount</span><span>Actions</span></div>
         {draft.lineItems.map((item, index) => <div className="line-row" role="row" key={item.id}>
           <label><span className="sr-only">Description {index + 1}</span><input aria-label={`Description ${index + 1}`} value={item.description} onChange={(event) => updateLine(item.id, "description", event.target.value)} /></label>
-          <label><span className="sr-only">Quantity {index + 1}</span><input aria-label={`Quantity ${index + 1}`} type="number" min="0" step="any" value={item.quantity} onChange={(event) => updateLine(item.id, "quantity", event.target.value)} /></label>
-          <label><span className="sr-only">Unit price {index + 1}</span><input aria-label={`Unit price ${index + 1}`} type="number" min="0" step="any" value={item.unitPrice} onChange={(event) => updateLine(item.id, "unitPrice", event.target.value)} /></label>
+          <label><span className="sr-only">Quantity {index + 1}</span><input aria-label={`Quantity ${index + 1}`} inputMode="decimal" aria-invalid={Boolean(numericErrors[`${item.id}.quantity`])} aria-describedby={numericErrors[`${item.id}.quantity`] ? `quantity-error-${item.id}` : undefined} value={item.quantity} onChange={(event) => updateLine(item.id, "quantity", event.target.value)} />{numericErrors[`${item.id}.quantity`] && <span className="field-error" id={`quantity-error-${item.id}`}>{numericErrors[`${item.id}.quantity`]}</span>}</label>
+          <label><span className="sr-only">Unit price {index + 1}</span><input aria-label={`Unit price ${index + 1}`} inputMode="decimal" aria-invalid={Boolean(numericErrors[`${item.id}.unitPrice`])} aria-describedby={numericErrors[`${item.id}.unitPrice`] ? `unit-price-error-${item.id}` : undefined} value={item.unitPrice} onChange={(event) => updateLine(item.id, "unitPrice", event.target.value)} />{numericErrors[`${item.id}.unitPrice`] && <span className="field-error" id={`unit-price-error-${item.id}`}>{numericErrors[`${item.id}.unitPrice`]}</span>}</label>
           <output aria-label={`Amount ${index + 1}`}>{formatAed(totals.lineAmounts[index])}</output>
           <button className="remove" type="button" onClick={() => setDraft((current) => ({ ...current, lineItems: current.lineItems.filter((line) => line.id !== item.id) }))}>Remove</button>
         </div>)}
@@ -63,8 +59,8 @@ export function InvoiceForm() {
 
       <div className="summary-area">
         <div className="tax-fields">
-          <label>Discount (%)<input aria-label="Discount percentage" type="number" min="0" max="100" step="any" value={draft.discountPercent} onChange={(event) => update("discountPercent", event.target.value)} /></label>
-          <label>VAT (%)<input aria-label="VAT percentage" type="number" min="0" max="100" step="any" value={draft.vatPercent} onChange={(event) => update("vatPercent", event.target.value)} /></label>
+          <label>Discount (%)<input aria-label="Discount percentage" inputMode="decimal" aria-invalid={Boolean(numericErrors.discountPercent)} aria-describedby={numericErrors.discountPercent ? "discount-error" : undefined} value={draft.discountPercent} onChange={(event) => update("discountPercent", event.target.value)} />{numericErrors.discountPercent && <span className="field-error" id="discount-error">{numericErrors.discountPercent}</span>}</label>
+          <label>VAT (%)<input aria-label="VAT percentage" inputMode="decimal" aria-invalid={Boolean(numericErrors.vatPercent)} aria-describedby={numericErrors.vatPercent ? "vat-error" : undefined} value={draft.vatPercent} onChange={(event) => update("vatPercent", event.target.value)} />{numericErrors.vatPercent && <span className="field-error" id="vat-error">{numericErrors.vatPercent}</span>}</label>
         </div>
         <dl className="totals"><div><dt>Subtotal</dt><dd>{formatAed(totals.subtotal)}</dd></div><div><dt>Discount</dt><dd>-{formatAed(totals.discount)}</dd></div><div><dt>Subtotal after discount</dt><dd>{formatAed(totals.subtotalAfterDiscount)}</dd></div><div><dt>VAT</dt><dd>{formatAed(totals.vat)}</dd></div><div className="grand-total"><dt>Total</dt><dd>{formatAed(totals.total)}</dd></div></dl>
       </div>

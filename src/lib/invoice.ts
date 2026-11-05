@@ -1,10 +1,12 @@
 export const INVOICE_SCHEMA_VERSION = 1;
 
+export type DecimalValue = number | string;
+
 export type LineItem = {
   id: string;
   description: string;
-  quantity: number;
-  unitPrice: number;
+  quantity: DecimalValue;
+  unitPrice: DecimalValue;
 };
 
 export type Invoice = {
@@ -14,10 +16,16 @@ export type Invoice = {
   invoiceDate: string;
   dueDate: string;
   businessName: string;
+  businessAddressLine1: string;
+  businessAddressLine2: string;
+  businessPhone: string;
   clientName: string;
+  clientAddressLine1: string;
+  clientAddressLine2: string;
+  clientPhone: string;
   lineItems: LineItem[];
-  discountPercent: number;
-  vatPercent: number;
+  discountPercent: DecimalValue;
+  vatPercent: DecimalValue;
 };
 
 export type DraftLineItem = Omit<LineItem, "quantity" | "unitPrice"> & {
@@ -53,7 +61,13 @@ export function createDraftInvoice(today: string, existingNumbers: string[] = []
     invoiceDate: today,
     dueDate: addDays(today, 14),
     businessName: "",
+    businessAddressLine1: "",
+    businessAddressLine2: "",
+    businessPhone: "",
     clientName: "",
+    clientAddressLine1: "",
+    clientAddressLine2: "",
+    clientPhone: "",
     lineItems: [],
     discountPercent: "0",
     vatPercent: "5",

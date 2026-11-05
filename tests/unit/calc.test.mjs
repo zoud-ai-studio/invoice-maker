@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculateTotals } from "../../.test-dist/src/lib/calc.js";
+import { calculateTotals, parseDecimalText } from "../../.test-dist/src/lib/calc.js";
 import { formatAed } from "../../.test-dist/src/lib/format.js";
 
 const invoice = (overrides = {}) => ({
@@ -53,4 +53,13 @@ test("handles zero amounts and a full discount", () => {
   assert.equal(formatAed(totals.subtotalAfterDiscount), "AED 0.00");
   assert.equal(formatAed(totals.vat), "AED 0.00");
   assert.equal(formatAed(totals.total), "AED 0.00");
+});
+
+test("parses raw decimal text without number coercion and rejects unsafe values", () => {
+  assert.deepEqual(parseDecimalText("99999999999999999999999"), { error: "Enter a value up to 12 whole digits." });
+  assert.deepEqual(parseDecimalText("1e21"), { error: "Enter a base-10 decimal number." });
+  assert.deepEqual(parseDecimalText("0.0000001"), { error: "Use no more than 6 decimal places." });
+  assert.deepEqual(parseDecimalText("-20", { maximum: "100" }), { error: "Enter a value from 0 to 100." });
+  assert.deepEqual(parseDecimalText("150", { maximum: "100" }), { error: "Enter a value from 0 to 100." });
+  assert.deepEqual(parseDecimalText("0.125"), { decimal: { coefficient: 125n, scale: 3 } });
 });
