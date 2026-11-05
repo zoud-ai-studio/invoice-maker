@@ -52,9 +52,9 @@ test("creates a line item and recalculates totals", async ({ page }) => {
   await page.getByLabel("Quantity 1").fill("1");
   await page.getByLabel("Unit price 1").fill("1500");
   await expect(page.getByLabel("Amount 1")).toHaveText("AED 1,500.00");
-  await expect(page.getByText("AED 1,575.00", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Invoice details" }).getByText("AED 1,575.00", { exact: true })).toBeVisible();
   await page.getByLabel("Discount percentage").fill("10");
-  await expect(page.getByText("AED 1,417.50", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Invoice details" }).getByText("AED 1,417.50", { exact: true })).toBeVisible();
 });
 
 test("does not apply an invalid discount or VAT to totals", async ({ page }) => {
@@ -63,15 +63,15 @@ test("does not apply an invalid discount or VAT to totals", async ({ page }) => 
   await page.getByRole("button", { name: "Add line item" }).click();
   await page.getByLabel("Quantity 1").fill("1");
   await page.getByLabel("Unit price 1").fill("500");
-  await expect(page.getByText("AED 525.00", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Invoice details" }).getByText("AED 525.00", { exact: true })).toBeVisible();
 
   await page.getByLabel("Discount percentage").fill("150");
   await expect(page.getByLabel("Discount percentage")).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByText("AED 525.00", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Invoice details" }).getByText("AED 525.00", { exact: true })).toBeVisible();
 
   await page.getByLabel("VAT percentage").fill("150");
   await expect(page.getByLabel("VAT percentage")).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByText("AED 500.00", { exact: true })).toBeVisible();
+  await expect(page.locator(".form-card .grand-total dd")).toHaveText("AED 500.00");
 });
 
 test("keeps invalid numeric text on the field and never crashes", async ({ page }) => {
@@ -84,7 +84,7 @@ test("keeps invalid numeric text on the field and never crashes", async ({ page 
       await page.getByLabel(field).fill(value);
       await expect(page.getByLabel(field)).toHaveAttribute("aria-invalid", "true");
     }
-    await expect(page.getByText(/Enter a value up to 12 whole digits|Enter a base-10 decimal number|Use no more than 6 decimal places/)).toBeVisible();
+    await expect(page.getByText(/Enter a value up to 12 whole digits|Enter a base-10 decimal number|Use no more than 6 decimal places/).first()).toBeVisible();
   }
 
   await page.getByLabel("Unit price 1").fill("-1000");
@@ -96,3 +96,46 @@ test("keeps invalid numeric text on the field and never crashes", async ({ page 
   await page.getByLabel("VAT percentage").fill("-20");
   await expect(page.getByLabel("VAT percentage")).toHaveAttribute("aria-invalid", "true");
 });
+
+test("prints a clean A4 invoice document", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create invoice" }).click();
+  await page.getByLabel("Business name").fill("Zoud Studio");
+  await page.getByLabel("Business address line 1").fill("Dubai Design District");
+  await page.getByLabel("Client name").fill("Acme LLC");
+  await page.getByLabel("Client address line 1").fill("Sheikh Zayed Road");
+  await page.getByRole("button", { name: "Add line item" }).click();
+  await page.getByLabel("Description 1").fill("Brand design");
+  await page.getByLabel("Quantity 1").fill("1");
+  await page.getByLabel("Unit price 1").fill("1250");
+
+  await page.evaluate(() => {
+    window.print = () => { document.documentElement.dataset.printRequested = "true"; };
+  });
+  await page.getByRole("button", { name: "Print invoice" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-print-requested", "true");
+
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByTestId("print-invoice")).toBeVisible();
+  await expect(page.getByTestId("print-invoice")).toContainText("Zoud Studio");
+  await expect(page.getByTestId("print-invoice")).toContainText("Dubai Design District");
+  await expect(page.getByTestId("print-invoice")).toContainText("Acme LLC");
+  await expect(page.getByTestId("print-invoice")).toContainText("Sheikh Zayed Road");
+  await expect(page.getByTestId("print-invoice")).toContainText("INV-0001");
+  await expect(page.getByTestId("print-invoice")).toContainText("Brand design");
+  await expect(page.getByTestId("print-invoice")).toContainText("AED 1,250.00");
+  await expect(page.getByRole("button", { name: "Print invoice" })).toBeHidden();
+  await expect(page.getByLabel("Business name")).toBeHidden();
+  await expect.poll(() => page.getByTestId("print-invoice").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+});
+
+for (const width of [375, 768, 1280]) {
+  test(`keeps the invoice form within the viewport at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Create invoice" }).click();
+    await page.getByRole("button", { name: "Add line item" }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect(page.getByLabel("Description 1")).toBeVisible();
+  });
+}
