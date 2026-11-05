@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Blocks the push if checks fail.
+set -euo pipefail
+make check
