@@ -12,6 +12,8 @@ export type LineItem = {
 export type Invoice = {
   schemaVersion: number;
   id: string;
+  createdAt: number;
+  updatedAt: number;
   invoiceNumber: string;
   invoiceDate: string;
   dueDate: string;
@@ -33,7 +35,7 @@ export type DraftLineItem = Omit<LineItem, "quantity" | "unitPrice"> & {
   unitPrice: string;
 };
 
-export type DraftInvoice = Omit<Invoice, "lineItems" | "discountPercent" | "vatPercent"> & {
+export type DraftInvoice = Omit<Invoice, "lineItems" | "discountPercent" | "vatPercent" | "createdAt" | "updatedAt"> & {
   lineItems: DraftLineItem[];
   discountPercent: string;
   vatPercent: string;
@@ -43,6 +45,29 @@ export function addDays(date: string, days: number): string {
   const [year, month, day] = date.split("-").map(Number);
   const result = new Date(year, month - 1, day + days);
   return [result.getFullYear(), String(result.getMonth() + 1).padStart(2, "0"), String(result.getDate()).padStart(2, "0")].join("-");
+}
+
+export function invoiceFromDraft(draft: DraftInvoice, id: string, createdAt: number, updatedAt = createdAt): Invoice {
+  return {
+    ...draft,
+    id,
+    createdAt,
+    updatedAt,
+    lineItems: draft.lineItems.map((item) => ({ ...item })),
+  };
+}
+
+export function draftFromInvoice(invoice: Invoice): DraftInvoice {
+  return {
+    ...invoice,
+    lineItems: invoice.lineItems.map((item) => ({
+      ...item,
+      quantity: String(item.quantity),
+      unitPrice: String(item.unitPrice),
+    })),
+    discountPercent: String(invoice.discountPercent),
+    vatPercent: String(invoice.vatPercent),
+  };
 }
 
 export function nextAvailableInvoiceNumber(numbers: string[]): string {
