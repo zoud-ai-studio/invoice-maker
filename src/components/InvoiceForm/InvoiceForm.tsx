@@ -11,8 +11,10 @@ function localDate(): string {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
-export function InvoiceForm() {
-  const [draft, setDraft] = useState<DraftInvoice>(() => createDraftInvoice(localDate()));
+type Props = { initialDraft?: DraftInvoice; onSave?: (draft: DraftInvoice) => void; onBack?: (draft: DraftInvoice) => void; };
+
+export function InvoiceForm({ initialDraft, onSave, onBack }: Props) {
+  const [draft, setDraft] = useState<DraftInvoice>(() => initialDraft ?? createDraftInvoice(localDate()));
   const [dueDateEdited, setDueDateEdited] = useState(false);
   const numericErrors = useMemo(() => draftNumericErrors(draft), [draft]);
   const totals = calculateTotals(draft);
@@ -26,7 +28,7 @@ export function InvoiceForm() {
   }
 
   return <main className="invoice-shell">
-    <header><p className="eyebrow">Invoice Maker</p><h1>Create invoice</h1><p>Prepare a clear invoice with real-time AED totals.</p></header>
+    <header><p className="eyebrow">Invoice Maker</p><h1>{draft.id === "draft" ? "Create invoice" : "Edit invoice"}</h1><p>Prepare a clear invoice with real-time AED totals.</p>{onBack && <button type="button" className="back" onClick={() => onBack(draft)}>Back to invoices</button>}</header>
     <section className="form-card" aria-label="Invoice details">
       <div className="field-grid">
         <label>Business name<input value={draft.businessName} onChange={(event) => update("businessName", event.target.value)} /></label>
@@ -64,6 +66,7 @@ export function InvoiceForm() {
         </div>
         <dl className="totals"><div><dt>Subtotal</dt><dd>{formatAed(totals.subtotal)}</dd></div><div><dt>Discount</dt><dd>-{formatAed(totals.discount)}</dd></div><div><dt>Subtotal after discount</dt><dd>{formatAed(totals.subtotalAfterDiscount)}</dd></div><div><dt>VAT</dt><dd>{formatAed(totals.vat)}</dd></div><div className="grand-total"><dt>Total</dt><dd>{formatAed(totals.total)}</dd></div></dl>
       </div>
+      {onSave && <button type="button" className="save" disabled={Object.keys(numericErrors).length > 0} onClick={() => onSave(draft)}>Save invoice</button>}
     </section>
   </main>;
 }

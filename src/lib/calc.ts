@@ -85,7 +85,7 @@ export function draftNumericErrors(draft: DraftInvoice): Record<string, string> 
   return errors;
 }
 
-export function calculateTotals(invoice: Invoice): InvoiceTotals {
+export function calculateTotals(invoice: Pick<Invoice, "lineItems" | "discountPercent" | "vatPercent">): InvoiceTotals {
   const lineAmounts = invoice.lineItems.map((item) => {
     const quantity = decimal(item.quantity);
     const unitPrice = decimal(item.unitPrice);

@@ -1,7 +1,51 @@
 import { expect, test } from "@playwright/test";
 
+async function saveInvoice(page, client = "Acme") {
+  await page.getByRole("button", { name: "Create invoice" }).click();
+  await page.getByLabel("Client name").fill(client);
+  await page.getByRole("button", { name: "Add line item" }).click();
+  await page.getByLabel("Description 1").fill("Design");
+  await page.getByLabel("Quantity 1").fill("1");
+  await page.getByLabel("Unit price 1").fill("100");
+  await page.getByRole("button", { name: "Save invoice" }).click();
+}
+
+test("persists, opens, duplicates, and deletes saved invoices", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("No invoices to display.")).toBeVisible();
+  await saveInvoice(page);
+  await expect(page.getByText("Acme")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Acme")).toBeVisible();
+  await page.getByRole("button", { name: "Open INV-0001" }).click();
+  await expect(page.getByLabel("Description 1")).toHaveValue("Design");
+  await page.getByRole("button", { name: "Back to invoices" }).click();
+  await page.getByRole("button", { name: "Duplicate" }).click();
+  await expect(page.getByLabel("Invoice number")).toHaveValue("INV-0002");
+  await page.getByRole("button", { name: "Save invoice" }).click();
+  await expect(page.getByText("INV-0002")).toBeVisible();
+  await page.getByRole("button", { name: "Delete" }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByText("INV-0002")).toBeVisible();
+  await page.getByRole("button", { name: "Delete" }).first().click();
+  await page.getByRole("button", { name: "Delete invoice" }).click();
+  await expect(page.getByText("INV-0002")).not.toBeVisible();
+});
+
+test("saves a valid invoice when returning to the invoice list", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create invoice" }).click();
+  await page.getByLabel("Client name").fill("Saved on return");
+  await page.getByRole("button", { name: "Back to invoices" }).click();
+  await expect(page.getByText("Saved on return")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Saved on return")).toBeVisible();
+});
+
 test("creates a line item and recalculates totals", async ({ page }) => {
   await page.goto("/");
+  await page.getByRole("button", { name: "Create invoice" }).click();
   await expect(page.getByLabel("Invoice number")).toHaveValue("INV-0001");
   await page.getByRole("button", { name: "Add line item" }).click();
   await page.getByLabel("Description 1").fill("Web Design");
@@ -15,6 +59,7 @@ test("creates a line item and recalculates totals", async ({ page }) => {
 
 test("does not apply an invalid discount or VAT to totals", async ({ page }) => {
   await page.goto("/");
+  await page.getByRole("button", { name: "Create invoice" }).click();
   await page.getByRole("button", { name: "Add line item" }).click();
   await page.getByLabel("Quantity 1").fill("1");
   await page.getByLabel("Unit price 1").fill("500");
@@ -31,6 +76,7 @@ test("does not apply an invalid discount or VAT to totals", async ({ page }) => 
 
 test("keeps invalid numeric text on the field and never crashes", async ({ page }) => {
   await page.goto("/");
+  await page.getByRole("button", { name: "Create invoice" }).click();
   await page.getByRole("button", { name: "Add line item" }).click();
 
   for (const field of ["Quantity 1", "Unit price 1"]) {
