@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { InvoiceForm } from "@/components/InvoiceForm/InvoiceForm";
 import { InvoiceList } from "@/components/InvoiceList/InvoiceList";
 import { draftNumericErrors } from "@/lib/calc";
-import { createDraftInvoice, draftFromInvoice, invoiceFromDraft, type DraftInvoice, type Invoice } from "@/lib/invoice";
+import { createDraftInvoice, draftFieldErrors, draftFromInvoice, formatLocalDate, invoiceFromDraft, type DraftInvoice, type Invoice } from "@/lib/invoice";
 import { readInvoices, removeInvoice, saveInvoice } from "@/lib/storage";
 
-function today(): string { return new Date().toISOString().slice(0, 10); }
+function today(): string { return formatLocalDate(new Date()); }
 function newId(): string { return crypto.randomUUID(); }
 
 export default function Home() {
@@ -23,19 +23,25 @@ export default function Home() {
   }, []);
 
   function beginNew() { setDraft(createDraftInvoice(today(), invoices.map((invoice) => invoice.invoiceNumber))); }
-  function persist(nextDraft: DraftInvoice) {
+  function persist(nextDraft: DraftInvoice): boolean {
+    if (Object.keys({ ...draftFieldErrors(nextDraft), ...draftNumericErrors(nextDraft) }).length > 0) return false;
     const existing = invoices.find((invoice) => invoice.id === nextDraft.id);
     const now = Date.now();
     const invoice = invoiceFromDraft(nextDraft, nextDraft.id === "draft" ? newId() : nextDraft.id, existing?.createdAt ?? now, now);
-    setInvoices(saveInvoice(window.localStorage, invoice));
-    setDraft(null);
+    try {
+      setInvoices(saveInvoice(window.localStorage, invoice));
+      setDraft(null);
+      return true;
+    } catch {
+      return false;
+    }
   }
   function duplicate(invoice: Invoice) {
     const copy = draftFromInvoice(invoice);
     setDraft({ ...copy, id: "draft", invoiceNumber: createDraftInvoice(today(), invoices.map((item) => item.invoiceNumber)).invoiceNumber, lineItems: copy.lineItems.map((line) => ({ ...line, id: newId() })) });
   }
   return <main className="invoice-shell">
-    {draft ? <InvoiceForm key={draft.id} initialDraft={draft} onSave={persist} onBack={(nextDraft) => Object.keys(draftNumericErrors(nextDraft)).length === 0 ? persist(nextDraft) : setDraft(null)} /> : <>
+    {draft ? <InvoiceForm key={draft.id} initialDraft={draft} onSave={persist} onBack={(nextDraft, changed) => { if (!changed) setDraft(null); else persist(nextDraft); }} /> : <>
       <header><p className="eyebrow">Invoice Maker</p><button className="save" type="button" onClick={beginNew}>Create invoice</button></header>
       <InvoiceList invoices={invoices} onOpen={(invoice) => setDraft(draftFromInvoice(invoice))} onDuplicate={duplicate} onDelete={setDeleteTarget} />
       {deleteTarget && <div className="dialog-backdrop" role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="delete-title" className="confirm-dialog"><h2 id="delete-title">Delete invoice?</h2><p>This permanently removes {deleteTarget.invoiceNumber}.</p><button type="button" onClick={() => { setInvoices(removeInvoice(window.localStorage, deleteTarget.id)); setDeleteTarget(null); }}>Delete invoice</button><button type="button" onClick={() => setDeleteTarget(null)}>Cancel</button></section></div>}
