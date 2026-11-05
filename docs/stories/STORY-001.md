@@ -9,14 +9,14 @@ The user must be able to create an invoice from scratch: enter business and clie
 - Given an empty invoice, when the user adds a line item with description "Web Design", quantity 1, unit price 1500, then the line item row shows correctly and the subtotal updates to AED 1,500.00.
 - Given an invoice with line items totaling AED 1,000.00, when the user sets discount to 10%, then the discount amount shows as AED 100.00, the subtotal after discount shows AED 900.00, VAT (5%) shows AED 45.00, and the total shows AED 945.00.
 - Given an invoice with line items, when the user changes any line item's description, quantity, or unit price, then the subtotal, VAT, and total recalculate immediately without a page reload.
-- Given an invoice, when the user enters 0.1 in a quantity field and 0.2 in a unit price field, then the line item amount shows AED 0.04 (no floating-point error like AED 0.04000000000000001).
+- Given an invoice, when the user enters 0.1 in a quantity field and 0.2 in a unit price field, then the line item amount shows AED 0.02 (no floating-point error like AED 0.020000000000000004).
 - Given an invoice with line items, when the user sets quantity to 0, then the line item amount is AED 0.00 and the subtotal reflects the zero amount.
 - Given an invoice with subtotal AED 1,000.00, when the user sets discount to 100%, then the subtotal after discount is AED 0.00, VAT (5%) is AED 0.00, and the total is AED 0.00.
 - Given an invoice, when the user changes the VAT percentage from 5% to 10%, then the VAT amount and total recalculate correctly.
 - Given an empty invoice, when the user adds a line item, then the new row appears with empty description, quantity 0, and unit price 0.
 - Given an invoice with one or more line items, when the user removes a line item, then the remaining items stay and totals recalculate.
 - Given an invoice with only one line item, when the user removes that line item, then the line items area shows an empty state prompting the user to add an item.
-- Given the invoice creation page, when the page loads, then the invoice number defaults to "INV-0001" (or the next available number) and is editable.
+- Given the invoice creation page, when the page loads, then the invoice number defaults to the next available number and is editable.
 - Given the invoice creation page, when the page loads, then the invoice date defaults to today's date and is editable.
 - Given the invoice creation page, when the page loads, then the due date defaults to 14 days after the invoice date and is editable.
 
