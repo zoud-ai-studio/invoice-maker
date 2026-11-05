@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { calculateTotals, draftNumericErrors } from "@/lib/calc";
 import { formatAed } from "@/lib/format";
 import { addDays, createDraftInvoice, emptyDraftLineItem, type DraftInvoice } from "@/lib/invoice";
+import { InvoiceDocument } from "./InvoiceDocument";
 
 function localDate(): string {
   const now = new Date();
@@ -28,8 +29,8 @@ export function InvoiceForm({ initialDraft, onSave, onBack }: Props) {
   }
 
   return <main className="invoice-shell">
-    <header><p className="eyebrow">Invoice Maker</p><h1>{draft.id === "draft" ? "Create invoice" : "Edit invoice"}</h1><p>Prepare a clear invoice with real-time AED totals.</p>{onBack && <button type="button" className="back" onClick={() => onBack(draft)}>Back to invoices</button>}</header>
-    <section className="form-card" aria-label="Invoice details">
+    <header className="screen-only"><p className="eyebrow">Invoice Maker</p><h1>{draft.id === "draft" ? "Create invoice" : "Edit invoice"}</h1><p>Prepare a clear invoice with real-time AED totals.</p>{onBack && <button type="button" className="back" onClick={() => onBack(draft)}>Back to invoices</button>}</header>
+    <section className="form-card screen-only" aria-label="Invoice details">
       <div className="field-grid">
         <label>Business name<input value={draft.businessName} onChange={(event) => update("businessName", event.target.value)} /></label>
         <label>Business address line 1<input value={draft.businessAddressLine1} onChange={(event) => update("businessAddressLine1", event.target.value)} /></label>
@@ -67,6 +68,8 @@ export function InvoiceForm({ initialDraft, onSave, onBack }: Props) {
         <dl className="totals"><div><dt>Subtotal</dt><dd>{formatAed(totals.subtotal)}</dd></div><div><dt>Discount</dt><dd>-{formatAed(totals.discount)}</dd></div><div><dt>Subtotal after discount</dt><dd>{formatAed(totals.subtotalAfterDiscount)}</dd></div><div><dt>VAT</dt><dd>{formatAed(totals.vat)}</dd></div><div className="grand-total"><dt>Total</dt><dd>{formatAed(totals.total)}</dd></div></dl>
       </div>
       {onSave && <button type="button" className="save" disabled={Object.keys(numericErrors).length > 0} onClick={() => onSave(draft)}>Save invoice</button>}
+      <button type="button" className="print-button" disabled={Object.keys(numericErrors).length > 0} onClick={() => window.print()}>Print invoice</button>
     </section>
+    <InvoiceDocument draft={draft} totals={totals} />
   </main>;
 }
