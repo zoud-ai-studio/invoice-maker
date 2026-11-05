@@ -41,10 +41,33 @@ export type DraftInvoice = Omit<Invoice, "lineItems" | "discountPercent" | "vatP
   vatPercent: string;
 };
 
+type LocalDateParts = Pick<Date, "getFullYear" | "getMonth" | "getDate">;
+
+export function formatLocalDate(date: LocalDateParts): string {
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+}
+
+export function isValidDate(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const [year, month, day] = match.slice(1).map(Number);
+  const candidate = new Date(year, month - 1, day);
+  return candidate.getFullYear() === year && candidate.getMonth() === month - 1 && candidate.getDate() === day;
+}
+
+export function draftFieldErrors(draft: DraftInvoice): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (!draft.invoiceNumber.trim()) errors.invoiceNumber = "Enter an invoice number.";
+  if (!isValidDate(draft.invoiceDate)) errors.invoiceDate = "Enter a valid invoice date.";
+  if (!isValidDate(draft.dueDate)) errors.dueDate = "Enter a valid due date.";
+  return errors;
+}
+
 export function addDays(date: string, days: number): string {
+  if (!isValidDate(date)) return "";
   const [year, month, day] = date.split("-").map(Number);
   const result = new Date(year, month - 1, day + days);
-  return [result.getFullYear(), String(result.getMonth() + 1).padStart(2, "0"), String(result.getDate()).padStart(2, "0")].join("-");
+  return formatLocalDate(result);
 }
 
 export function invoiceFromDraft(draft: DraftInvoice, id: string, createdAt: number, updatedAt = createdAt): Invoice {
